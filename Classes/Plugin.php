@@ -15,12 +15,23 @@ class Plugin implements PluginInterface {
 
     public static function getSubscribedEvents() {
         return [
-          ScriptEvents::POST_INSTALL_CMD => 'postInstall',
+            ScriptEvents::POST_INSTALL_CMD => 'postInstall',
+            ScriptEvents::POST_AUTOLOAD_DUMP => 'postAutoload',
         ];
     }
 
+    /**
+	 * @param \Composer\Script\Event $event
+	 */
     public function postInstall(Event $event) {
         echo 'caught event:' . $event->getName();
     }
+    
+    /**
+	 * @param \Composer\Script\Event $event
+	 */
+	public function postAutoload(Event $event) {
+		echo 'caught event:' . $event->getName();
+	}
 
 }
