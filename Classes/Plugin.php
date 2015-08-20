@@ -1,38 +1,21 @@
 <?php
 namespace AppZap\PHPFrameworkComposerInstaller;
 
+use AppZap\PHPFrameworkComposerInstaller\Util\Filesystem;
 use Composer\Composer;
+use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\IO\IOInterface;
 use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
-use Composer\Util\Filesystem;
 
-class Plugin implements PluginInterface {
-
-  protected function recurse_copy($src,$dst) {
-    $dir = opendir($src);
-    @mkdir($dst);
-    while(false !== ( $file = readdir($dir)) ) {
-      if (( $file != '.' ) && ( $file != '..' )) {
-        if ( is_dir($src . '/' . $file) ) {
-          $this->recurse_copy($src . '/' . $file,$dst . '/' . $file);
-        }
-        else {
-          copy($src . '/' . $file,$dst . '/' . $file);
-        }
-      }
-    }
-    closedir($dir);
-  }
+class Plugin implements PluginInterface, EventSubscriberInterface {
 
   public function activate(Composer $composer, IOInterface $io) {
-    $this->recurse_copy(dirname(__DIR__ . '/../Boilerplate/*'), '.');
   }
 
   public static function getSubscribedEvents() {
     return [
-      ScriptEvents::POST_INSTALL_CMD => 'postInstall',
       ScriptEvents::POST_AUTOLOAD_DUMP => 'postAutoload',
     ];
   }
@@ -40,15 +23,30 @@ class Plugin implements PluginInterface {
   /**
    * @param \Composer\Script\Event $event
    */
-  public function postInstall(Event $event) {
-    echo 'caught event:' . $event->getName();
+  public function postAutoload(Event $event) {
+    $this->recursiveCopy(
+      dirname(__DIR__ . '/../Boilerplate/*'),
+      '.'
+    );
   }
 
   /**
-   * @param \Composer\Script\Event $event
+   * @param string $source
+   * @param string $destination
    */
-  public function postAutoload(Event $event) {
-    echo 'caught event:' . $event->getName();
+  protected function recursiveCopy($source, $destination) {
+    $dir = opendir($source);
+    @mkdir($destination);
+    while (false !== ($file = readdir($dir))) {
+      if (($file != '.') && ($file != '..')) {
+        if (is_dir($source . '/' . $file)) {
+          $this->recursiveCopy($source . '/' . $file, $destination . '/' . $file);
+        } else {
+          copy($source . '/' . $file, $destination . '/' . $file);
+        }
+      }
+    }
+    closedir($dir);
   }
 
 }
